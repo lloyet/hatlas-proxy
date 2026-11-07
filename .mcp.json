@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "papermc-docs": {
+      "type": "http",
+      "url": "https://gitmcp.io/PaperMC/docs"
+    },
+    "vitaminmcp": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "vitaminmcp@3.2.2"]
+    }
+  }
+}

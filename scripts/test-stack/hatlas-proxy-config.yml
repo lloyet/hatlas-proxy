@@ -1,0 +1,24 @@
+# hatlas-proxy config for the LOCAL TEST STACK (copied by scripts/test-stack.ps1 to
+# <stack>/proxy/plugins/hatlas-proxy/config.yml on install and reset). Absent keys use the
+# plugin's defaults (src/main/resources/config.yml).
+database:
+  host: localhost
+  port: 5432
+  # Own database: never the Hatlas test database (hatlas_test).
+  name: hatlas_proxy_dev
+  user: hatlas
+  password-env: HATLAS_DB_PASSWORD
+
+servers:
+  hub: hub
+  faction: faction
+
+access:
+  renew-url: "http://localhost:5173/renew"
+  # Short delays so scenarios can watch a warning and the return to the hub.
+  warn-before-minutes: [1]
+  check-interval-seconds: 5
+
+link:
+  url: "http://localhost:5173/link"
+  code-lifetime-minutes: 5
