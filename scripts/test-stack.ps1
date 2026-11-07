@@ -17,7 +17,9 @@
   - status  : running / stopped for each component.
   - deploy  : gradlew build, replaces plugins/hatlas.proxy-*.jar on the proxy, restarts the proxy.
   - reset   : stops everything, deletes the backend worlds (and bot player data), drops and recreates
-              the test database, rewrites the plugin config, starts everything. Run before a test campaign.
+              the test database, loads the ticket fixture (test-stack/web-tickets.sql: Tester1 valid,
+              Tester2 expired, Tester3 none, Tester4 valid), rewrites the plugin config, starts
+              everything. Run before a test campaign.
   - db-up   : checks the PostgreSQL container is running and creates the test database if missing.
   - console <hub|faction> "<cmd>" : one console command over RCON.
 
@@ -182,6 +184,14 @@ function Reset-Database {
     Write-Output "database $DbName recreated (empty)"
 }
 
+# Website ticket table with rows for the test bots (dates relative to now), for the access suites.
+function Import-WebTickets {
+    $sql = Get-Content (Join-Path $PSScriptRoot 'test-stack\web-tickets.sql') -Raw
+    $sql | & docker exec -i $PgContainer psql -U hatlas -d $DbName -v ON_ERROR_STOP=1 -q -f - | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw 'web-tickets.sql failed' }
+    Write-Output 'web.tickets fixture loaded (Tester1 valid, Tester2 expired, Tester3 none, Tester4 valid)'
+}
+
 # ── Install ─────────────────────────────────────────────────────────────────
 function Get-PaperMcJar([string]$project, [string]$version) {
     $cache = Get-Dir 'cache'
@@ -339,6 +349,7 @@ function Reset-Stack {
         }
     }
     Reset-Database
+    Import-WebTickets
     Copy-Item (Join-Path $PSScriptRoot 'test-stack\hatlas-proxy-config.yml') (Join-Path (Get-Dir 'proxy') 'plugins\hatlas-proxy\config.yml') -Force
     Write-Output 'worlds deleted, database emptied, plugin config restored'
     Start-Stack 'all'
