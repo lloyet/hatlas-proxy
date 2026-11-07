@@ -109,7 +109,9 @@ public final class ConfigLoader {
         var link = new HatlasConfig.Link(
                 r.text("link.url"),
                 r.integer("link.code-lifetime-minutes", 5, 10),
-                r.integer("link.code-length", 4, 16));
+                r.integer("link.code-length", 4, 16),
+                r.alphabet("link.code-alphabet"),
+                r.integer("link.cooldown-seconds", 0, 3600));
 
         var messages = new HatlasConfig.Messages(
                 r.text("messages.access-expired"),
@@ -117,6 +119,8 @@ public final class ConfigLoader {
                 r.text("messages.sent-to-hub"),
                 r.text("messages.link-code"),
                 r.text("messages.link-hub-only"),
+                r.text("messages.link-cooldown"),
+                r.text("messages.link-players-only"),
                 r.text("messages.service-unavailable"));
 
         if (!errors.isEmpty()) {
@@ -146,6 +150,18 @@ public final class ConfigLoader {
             String value = text(path);
             if (value != null && !value.matches("[a-z_][a-z0-9_]*")) {
                 errors.add(path + " must be a lowercase SQL identifier (got '" + value + "')");
+            }
+            return value;
+        }
+
+        String alphabet(String path) {
+            String value = text(path);
+            if (value == null) {
+                return null;
+            }
+            if (value.chars().anyMatch(Character::isWhitespace) || value.chars().distinct().count() != value.length()
+                    || value.length() < 10) {
+                errors.add(path + " must be at least 10 different characters, no spaces (got '" + value + "')");
             }
             return value;
         }
