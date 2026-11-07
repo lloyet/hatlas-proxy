@@ -3,6 +3,7 @@
   {"action": "wait_for", "condition": "ticks", "count": 40},
   {"action": "command", "bot": "Tester2", "command": "server faction"},
   {"action": "assert_message", "bot": "Tester2", "contains": "Your access expired, renew at"},
+  {"action": "wait_for", "condition": "ticks", "count": 40},
   {"action": "command", "bot": "Tester2", "command": "link"},
   {"action": "assert_message", "bot": "Tester2", "contains": "Your link code:"},
   {"action": "despawn", "bot": "Tester2"},

@@ -23,3 +23,8 @@ Checked by hand when the gate changes:
   a player already on the faction server stays there (the periodic check only logs). Rename back.
 - **Joining straight at the faction server** (if a forced host or the try list points there): a
   player without a ticket lands on the hub instead of being disconnected.
+
+Pitfall: Velocity's `command-rate-limit = 50` (ms) with `forward-commands-if-rate-limited = true`
+forwards a command sent less than 50 ms after the previous one to the backend ("Unknown or incomplete
+command"). The plugin's answers come back faster than that, so a scenario must `wait_for` a few ticks
+between a command's reply and the next command.

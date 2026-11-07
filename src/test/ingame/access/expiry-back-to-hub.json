@@ -6,10 +6,12 @@
   {"action": "command", "bot": "Tester4", "command": "link"},
   {"action": "assert_message", "bot": "Tester4", "contains": "Use /link on the hub"},
   {"action": "assert_message", "bot": "Tester4", "contains": "Your access expires in 1 min", "timeoutMillis": 60000},
+  {"action": "wait_for", "condition": "ticks", "count": 400, "timeoutMillis": 30000},
   {"action": "assert_message", "bot": "Tester4", "contains": "Your access expired: you were sent back to the hub.", "timeoutMillis": 60000},
   {"action": "wait_for", "condition": "ticks", "count": 40},
   {"action": "command", "bot": "Tester4", "command": "link"},
   {"action": "assert_message", "bot": "Tester4", "contains": "Your link code:"},
+  {"action": "wait_for", "condition": "ticks", "count": 20},
   {"action": "command", "bot": "Tester4", "command": "server faction"},
   {"action": "assert_message", "bot": "Tester4", "contains": "Your access expired, renew at"},
   {"action": "despawn", "bot": "Tester4"}
