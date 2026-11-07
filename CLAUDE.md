@@ -37,7 +37,7 @@ It is milestone **M2** of the sibling repository [`../play.mc.atlas`](../play.mc
 |---|---|
 | Java | **25** (required by Velocity 4.x). Gradle toolchain; JDK found in `~/.jdks` (IntelliJ) or downloaded by the foojay resolver. |
 | Velocity | **4.3.1** (API `com.velocitypowered:velocity-api:4.3.1`, PaperMC repo). Adventure **5.x** (not 4.x: older examples may not compile). |
-| Gradle | 9.4.1 wrapper, Kotlin DSL, `java` + `xyz.jpenilla.run-velocity` 3.0.2 |
+| Gradle | **9.9.0** wrapper (same as Atlas), Kotlin DSL, `java` + `xyz.jpenilla.run-velocity` 3.0.2 |
 | Group / version | `org.minecraft` / `1.0-SNAPSHOT`, root package `org.minecraft.hatlas.proxy` |
 
 ```bash
@@ -59,10 +59,10 @@ It is milestone **M2** of the sibling repository [`../play.mc.atlas`](../play.mc
 - 2026-11-07: skeleton only (`@Plugin`, init/shutdown log). Verified: `./gradlew build` produces Java 25 classes and `velocity-plugin.json`; `runVelocity` boots Velocity 4.3.1, loads `hatlas-proxy 1.0-SNAPSHOT`, runs the init handler, listens on 25577.
 
 ## Open Questions
-1. **Database access library:** plain JDBC + HikariCP (bundled with shadow), or something else? PostgreSQL driver to bundle or load at runtime?
-2. **Config format:** Velocity plugins usually use TOML/YAML in `@DataDirectory` (Configurate is in the API). Which keys: DB connection, hub server name, faction server name, renew URL, warning delay?
+1. ~~**Database access**~~ — ✔ answered 2026-11-07: plain **JDBC + HikariCP**, with the **PostgreSQL driver bundled in the jar** (shadow, relocated).
+2. ~~**Config**~~ — ✔ answered 2026-11-07: **every value an admin could want to change goes to the config file** (DB connection, server names, renew URL, warning delays, code lifetime, messages…); nothing tunable is hard-coded. Format still to pick (Configurate is in the Velocity API: YAML or HOCON).
 3. **Shared code with Atlas** (ticket check on the faction server, "defence in depth"): duplicate the small SQL query in Atlas, or a shared module later?
-4. **Repository remote:** create `lloyet/hatlas-proxy` on GitHub? (not created yet)
+4. ~~**Repository remote**~~ — ✔ 2026-11-07: `https://github.com/lloyet/hatlas-proxy.git` (created by the user).
 5. **Tests:** unit tests (JUnit) for the ticket/link logic; in-game tests through a local proxy + VitaminMCP (it supports proxied networks) later.
 
 ## Changelog
