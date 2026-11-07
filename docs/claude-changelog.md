@@ -3,6 +3,8 @@
 Every change Claude makes to this project is logged here, newest first.
 Format: `YYYY-MM-DD — branch — summary (files)`.
 
+- **2026-11-07 — feat/yaml-config-test-stack —** Open Question 7 answered: plain Paper on the stack's `faction` backend for now; new §5 "Next tasks" with task 1, `test-stack.ps1 install faction --with-hatlas` (Hatlas jar, `access.require_ticket: true`) to test the full production chain once Hatlas has its login ticket check. (`CLAUDE.md`)
+
 - **2026-11-07 — feat/yaml-config-test-stack —** Sibling project renamed **Atlas → Hatlas**: references updated (schema `hatlas`, comments, script guards' messages, agent and skill); older changelog entries kept as written. Open Question 7 reworded (it is about what the test stack installs on its `faction` backend, not start order) with options (a)/(b) and a proposal. Working agreement 4: never push on its own, push only to open a PR. First VitaminMCP run through the proxy: `routing/join-lands-on-hub.json` PASS, no exceptions, stack stopped. (`CLAUDE.md`, `build.gradle.kts`, `HatlasProxy.java`, `scripts/test-stack.ps1`, `scripts/test-stack/hatlas-proxy-config.yml`, `.claude/agents/ingame-tester.md`, `.claude/skills/paper-ingame-test/SKILL.md`)
 
 - **2026-11-07 — feat/yaml-config-test-stack —** Every in-game campaign now ends by shutting the test stack down (`session_reset`, `test-stack.ps1 stop`, `status` check), whatever the verdict: added as the final step of the `ingame-tester` agent, in the skill ("Fin de campagne") and in CLAUDE.md §2. Stopped the stack, which was left running after the setup check. (`.claude/agents/ingame-tester.md`, `.claude/skills/paper-ingame-test/SKILL.md`, `CLAUDE.md`)
