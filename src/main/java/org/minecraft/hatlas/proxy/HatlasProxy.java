@@ -7,6 +7,8 @@ import com.velocitypowered.api.event.proxy.ProxyShutdownEvent;
 import com.velocitypowered.api.plugin.Plugin;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.ProxyServer;
+import org.minecraft.hatlas.proxy.access.TicketGate;
+import org.minecraft.hatlas.proxy.access.TicketStore;
 import org.minecraft.hatlas.proxy.config.ConfigException;
 import org.minecraft.hatlas.proxy.config.ConfigLoader;
 import org.minecraft.hatlas.proxy.config.HatlasConfig;
@@ -28,8 +30,8 @@ import java.util.Map;
  * (milestone M2 of ../hatlas). Planned responsibilities:
  * <ul>
  *   <li>{@code /link}: single-use code in {@code web.link_codes} for the SvelteKit site (done);</li>
- *   <li>ticket check when moving hub → faction server ({@code web.tickets}, tied to the UUID);</li>
- *   <li>mid-session ticket expiry: warn, then send back to the hub;</li>
+ *   <li>ticket check when moving hub → faction server ({@code web.tickets}, tied to the UUID) (done);</li>
+ *   <li>mid-session ticket expiry: warn, then send back to the hub (done);</li>
  *   <li>presence table (who is online, on which server).</li>
  * </ul>
  * No game data is written to the plugin by the website; writes go through PostgreSQL.
@@ -89,6 +91,10 @@ public final class HatlasProxy {
         commands.register(commands.metaBuilder("link").plugin(this).build(),
                 new LinkCommand(config, messages, linkCodes,
                         new Cooldown(Duration.ofSeconds(config.link().cooldownSeconds())), logger));
+
+        TicketGate gate = new TicketGate(server, config, messages, new TicketStore(database), logger);
+        server.getEventManager().register(this, gate);
+        gate.schedule(this);
 
         logger.info("hatlas.proxy enabled (hub '{}', faction '{}', database {}, schema {})",
                 config.servers().hub(), config.servers().faction(), config.database().jdbcUrl(),

@@ -26,3 +26,10 @@ features:
   # /link on the hub: single-use code written to web.link_codes, cooldown, hub only.
   link:
     - src/main/java/org/minecraft/hatlas/proxy/link/**
+    # link-off-hub-refused needs to reach the faction server, so it depends on the gate too.
+    - src/main/java/org/minecraft/hatlas/proxy/access/**
+
+  # Ticket gate hub -> faction (web.tickets), mid-session expiry warning and return to the hub.
+  access:
+    - src/main/java/org/minecraft/hatlas/proxy/access/**
+    - scripts/test-stack/web-tickets.sql
