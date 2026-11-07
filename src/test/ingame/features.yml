@@ -14,8 +14,15 @@ shared:
   - scripts/test-stack/**
   - build.gradle*
   - settings.gradle*
+  - src/main/java/org/minecraft/hatlas/proxy/db/**
+  - src/main/java/org/minecraft/hatlas/proxy/message/**
+  - src/main/resources/db/**
 
 features:
   # A player joining the network lands on the hub, through the proxy.
   routing:
     - scripts/test-stack/velocity.toml
+
+  # /link on the hub: single-use code written to web.link_codes, cooldown, hub only.
+  link:
+    - src/main/java/org/minecraft/hatlas/proxy/link/**

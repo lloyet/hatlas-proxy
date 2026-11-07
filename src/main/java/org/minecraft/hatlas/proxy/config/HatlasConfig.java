@@ -34,11 +34,13 @@ public record HatlasConfig(
     }
 
     /** {@code /link} codes. */
-    public record Link(String url, int codeLifetimeMinutes, int codeLength) {
+    public record Link(String url, int codeLifetimeMinutes, int codeLength, String codeAlphabet,
+                       int cooldownSeconds) {
     }
 
     /** MiniMessage templates. */
     public record Messages(String accessExpired, String accessExpiring, String sentToHub,
-                           String linkCode, String linkHubOnly, String serviceUnavailable) {
+                           String linkCode, String linkHubOnly, String linkCooldown,
+                           String linkPlayersOnly, String serviceUnavailable) {
     }
 }

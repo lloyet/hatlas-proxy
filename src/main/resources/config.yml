@@ -36,8 +36,13 @@ link:
   url: "https://example.org/link"
   # Lifetime of a /link code, in minutes (5 to 10).
   code-lifetime-minutes: 10
-  # Number of characters of a code.
+  # Number of characters of a code (4 to 16).
   code-length: 6
+  # Characters a code is made of (at least 10 different ones). The default leaves out
+  # look-alikes (0/O, 1/I/L) so a code read on screen is typed right on the website.
+  code-alphabet: "ABCDEFGHJKMNPQRSTUVWXYZ23456789"
+  # Seconds a player waits between two /link (0 = no wait). Each /link replaces the previous code.
+  cooldown-seconds: 30
 
 messages:
   access-expired: "<red>Your access expired, renew at <click:open_url:'<renew_url>'><u><renew_url></u></click>"
@@ -45,4 +50,6 @@ messages:
   sent-to-hub: "<red>Your access expired: you were sent back to the hub."
   link-code: "<green>Your link code: <gold><bold><code></bold></gold> (valid <minutes> min). Enter it on <click:open_url:'<link_url>'><u><link_url></u></click>"
   link-hub-only: "<red>Use /link on the hub."
+  link-cooldown: "<red>Wait <seconds> s before asking for a new link code."
+  link-players-only: "<red>Only players can use /link."
   service-unavailable: "<red>The service is unavailable, try again in a moment."

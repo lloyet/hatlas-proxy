@@ -1,0 +1,9 @@
+[
+  {"action": "spawn", "bot": "Tester1"},
+  {"action": "wait_for", "condition": "ticks", "count": 40},
+  {"action": "command", "bot": "Tester1", "command": "link"},
+  {"action": "assert_message", "bot": "Tester1", "contains": "Your link code:"},
+  {"action": "command", "bot": "Tester1", "command": "link"},
+  {"action": "assert_message", "bot": "Tester1", "contains": "before asking for a new link code"},
+  {"action": "despawn", "bot": "Tester1"}
+]

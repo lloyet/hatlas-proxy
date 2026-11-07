@@ -1,0 +1,9 @@
+[
+  {"action": "spawn", "bot": "Tester2"},
+  {"action": "wait_for", "condition": "ticks", "count": 40},
+  {"action": "command", "bot": "Tester2", "command": "server faction"},
+  {"action": "wait_for", "condition": "ticks", "count": 60},
+  {"action": "command", "bot": "Tester2", "command": "link"},
+  {"action": "assert_message", "bot": "Tester2", "contains": "Use /link on the hub"},
+  {"action": "despawn", "bot": "Tester2"}
+]

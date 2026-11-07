@@ -27,6 +27,8 @@ class ConfigLoaderTest {
         assertEquals("faction", config.servers().faction());
         assertEquals(List.of(10, 1), config.access().warnBeforeMinutes());
         assertEquals(10, config.link().codeLifetimeMinutes());
+        assertEquals("ABCDEFGHJKMNPQRSTUVWXYZ23456789", config.link().codeAlphabet());
+        assertEquals(30, config.link().cooldownSeconds());
     }
 
     @Test
@@ -57,6 +59,7 @@ class ConfigLoaderTest {
                   faction: same
                 link:
                   code-lifetime-minutes: 30
+                  code-alphabet: "AABB"
                 access:
                   warn-before-minutes: [0]
                 """);
@@ -68,6 +71,7 @@ class ConfigLoaderTest {
         assertTrue(message.contains("database.schema"), message);
         assertTrue(message.contains("servers.hub and servers.faction"), message);
         assertTrue(message.contains("link.code-lifetime-minutes"), message);
+        assertTrue(message.contains("link.code-alphabet"), message);
         assertTrue(message.contains("access.warn-before-minutes"), message);
     }
 
