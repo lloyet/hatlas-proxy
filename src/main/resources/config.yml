@@ -1,0 +1,48 @@
+# hatlas-proxy configuration.
+# Copied to plugins/hatlas-proxy/config.yml on first start; edit that copy, then restart the proxy.
+# Messages use MiniMessage (https://docs.advntr.dev/minimessage/format.html), never legacy & codes.
+
+# Do not change: used to migrate this file when its layout changes.
+config-version: 1
+
+database:
+  host: localhost
+  port: 5432
+  name: hatlas
+  user: hatlas
+  # The password is never written here: it is read from this environment variable.
+  password-env: HATLAS_DB_PASSWORD
+  # Schema holding link_codes, tickets and presence (owned by the website, shared with this plugin).
+  schema: web
+  pool-size: 5
+  # How long to wait for a free connection before giving up, in seconds.
+  connection-timeout-seconds: 5
+
+servers:
+  # Names of the backends, as declared in velocity.toml [servers].
+  hub: hub
+  faction: faction
+
+access:
+  # Page where a player buys or renews a ticket. Available in messages as <renew_url>.
+  renew-url: "https://example.org/renew"
+  # Warn this many minutes before a ticket expires during a session (one warning per value).
+  warn-before-minutes: [10, 1]
+  # How often online players' tickets are re-checked, in seconds.
+  check-interval-seconds: 60
+
+link:
+  # Page where a logged-in player enters the code. Available in messages as <link_url>.
+  url: "https://example.org/link"
+  # Lifetime of a /link code, in minutes (5 to 10).
+  code-lifetime-minutes: 10
+  # Number of characters of a code.
+  code-length: 6
+
+messages:
+  access-expired: "<red>Your access expired, renew at <click:open_url:'<renew_url>'><u><renew_url></u></click>"
+  access-expiring: "<yellow>Your access expires in <minutes> min. Renew at <click:open_url:'<renew_url>'><u><renew_url></u></click>"
+  sent-to-hub: "<red>Your access expired: you were sent back to the hub."
+  link-code: "<green>Your link code: <gold><bold><code></bold></gold> (valid <minutes> min). Enter it on <click:open_url:'<link_url>'><u><link_url></u></click>"
+  link-hub-only: "<red>Use /link on the hub."
+  service-unavailable: "<red>The service is unavailable, try again in a moment."

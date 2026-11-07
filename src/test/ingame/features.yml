@@ -1,0 +1,21 @@
+# Feature → files map for the in-game test suites (src/test/ingame/<feature>/*.json).
+#
+# A change runs the suites of every feature whose globs match a changed file
+# (resolved by .claude/hooks/affected-features.mjs, same tool as ../hatlas).
+# Glob syntax: `**` = any number of directories, `*` = anything except `/`, `?` = one char.
+# Add a feature here (link, ticket-gate, expiry, presence…) when its code lands.
+
+# Files that every feature depends on: touching one runs ALL suites.
+shared:
+  - src/main/java/org/minecraft/hatlas/proxy/HatlasProxy.java
+  - src/main/java/org/minecraft/hatlas/proxy/config/**
+  - src/main/resources/config.yml
+  - scripts/test-stack.ps1
+  - scripts/test-stack/**
+  - build.gradle*
+  - settings.gradle*
+
+features:
+  # A player joining the network lands on the hub, through the proxy.
+  routing:
+    - scripts/test-stack/velocity.toml
