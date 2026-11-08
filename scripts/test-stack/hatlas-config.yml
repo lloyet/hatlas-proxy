@@ -1,0 +1,24 @@
+# Hatlas config.yml for the faction backend of the LOCAL TEST STACK, in "hatlas on" mode
+# (scripts/test-stack.ps1 hatlas on): the full production access chain, Hatlas's own login
+# ticket check included. Only keys that differ from Hatlas's shipped defaults; Hatlas adds the
+# rest on first start. The password comes from HATLAS_DB_PASSWORD (passed by the script).
+storage:
+  type: postgresql
+  postgresql:
+    host: localhost
+    port: 5432
+    # The stack's own database (never hatlas / hatlas_test): Hatlas uses schema hatlas in it,
+    # next to the web schema of the proxy and the ticket fixture.
+    database: hatlas_proxy_dev
+    username: hatlas
+    password: ''
+    schema: hatlas
+access:
+  # Defence in depth behind the proxy's gate. Bots are never op (operators bypass it).
+  require_ticket: true
+  web_schema: web
+  renew_url: 'http://localhost:5173/renew'
+  ops_bypass: true
+# Bots wait a lot during scenarios: never kick them for being AFK.
+afk:
+  timeout_seconds: 86400

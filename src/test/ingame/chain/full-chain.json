@@ -1,0 +1,24 @@
+[
+  {"action": "spawn", "bot": "Tester1"},
+  {"action": "wait_for", "condition": "ticks", "count": 40},
+  {"action": "command", "bot": "Tester1", "command": "link"},
+  {"action": "assert_message", "bot": "Tester1", "contains": "Your link code:"},
+  {"action": "wait_for", "condition": "ticks", "count": 40},
+  {"action": "command", "bot": "Tester1", "command": "server faction"},
+  {"action": "wait_for", "condition": "ticks", "count": 60},
+  {"action": "command", "bot": "Tester1", "command": "f balance"},
+  {"action": "assert_message", "bot": "Tester1", "contains": "You are not in any faction."},
+  {"action": "wait_for", "condition": "ticks", "count": 40},
+  {"action": "command", "bot": "Tester1", "command": "link"},
+  {"action": "assert_message", "bot": "Tester1", "contains": "Use /link on the hub"},
+  {"action": "despawn", "bot": "Tester1"},
+
+  {"action": "spawn", "bot": "Tester2"},
+  {"action": "wait_for", "condition": "ticks", "count": 40},
+  {"action": "command", "bot": "Tester2", "command": "server faction"},
+  {"action": "assert_message", "bot": "Tester2", "contains": "Your access expired, renew at"},
+  {"action": "wait_for", "condition": "ticks", "count": 40},
+  {"action": "command", "bot": "Tester2", "command": "f balance"},
+  {"action": "assert_message", "bot": "Tester2", "contains": "Unknown or incomplete command"},
+  {"action": "despawn", "bot": "Tester2"}
+]

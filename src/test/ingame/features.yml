@@ -33,3 +33,10 @@ features:
   access:
     - src/main/java/org/minecraft/hatlas/proxy/access/**
     - scripts/test-stack/web-tickets.sql
+
+  # Whole access chain with the real Hatlas on the faction backend (test-stack.ps1 hatlas on).
+  # Run every suite in that mode.
+  chain:
+    - src/main/java/org/minecraft/hatlas/proxy/access/**
+    - src/main/java/org/minecraft/hatlas/proxy/link/**
+    - scripts/test-stack/hatlas-config.yml

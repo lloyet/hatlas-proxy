@@ -22,6 +22,12 @@
               everything. Run before a test campaign.
   - db-up   : checks the PostgreSQL container is running and creates the test database if missing.
   - console <hub|faction> "<cmd>" : one console command over RCON.
+  - hatlas <on|off|status> : FULL CHAIN mode (Hatlas M2 task 6). "on" builds ../hatlas (gradlew build),
+              installs its jar + packetevents (copied read-only from the shared test server) on the
+              faction backend with test-stack/hatlas-config.yml (PostgreSQL TEST_DB_NAME, schema
+              hatlas, access.require_ticket: true), restarts faction. "off" removes them (plain Paper
+              again). The mode survives reset (which rewrites the Hatlas config). Bots must stay
+              non-op: operators bypass Hatlas's check.
 
   Layout (outside the repo): <TEST_STACK_DIR>\{proxy,hub,faction,cache}.
   Ports (all bound to 127.0.0.1):
@@ -44,7 +50,7 @@
 #>
 param(
     [Parameter(Mandatory = $true, Position = 0)]
-    [ValidateSet('install', 'start', 'stop', 'restart', 'status', 'deploy', 'reset', 'db-up', 'console')]
+    [ValidateSet('install', 'start', 'stop', 'restart', 'status', 'deploy', 'reset', 'db-up', 'console', 'hatlas')]
     [string]$Action,
     [Parameter(Position = 1)]
     [string]$Target = 'all',
@@ -70,6 +76,8 @@ $Xmx         = if ($env:TEST_STACK_XMX) { $env:TEST_STACK_XMX } else { '1G' }
 $DbName      = if ($env:TEST_DB_NAME) { $env:TEST_DB_NAME } else { 'hatlas_proxy_dev' }
 $PgContainer = if ($env:PG_CONTAINER) { $env:PG_CONTAINER } else { 'hatlas-postgres-postgres-1' }
 $SharedServer = 'C:\Users\lloyet\Documents\Projects\servers\minecraft-paper1.21.11'
+$HatlasRepo  = Join-Path (Split-Path -Parent $ProjectDir) 'hatlas'
+$PacketEventsJar = Join-Path $SharedServer 'plugins\packetevents-spigot-2.14.0.jar'
 $VitaminJar  = if ($env:VITAMINMCP_PLUGIN_JAR) { $env:VITAMINMCP_PLUGIN_JAR } else { Join-Path $SharedServer 'plugins\VitaminMCP.jar' }
 $JavaExe     = if ($env:TEST_STACK_JAVA) { $env:TEST_STACK_JAVA } else {
     $jdk = Get-ChildItem (Join-Path $env:USERPROFILE '.jdks') -Directory -ErrorAction SilentlyContinue |
@@ -182,6 +190,51 @@ function Reset-Database {
     Invoke-Psql 'hatlas' "DROP DATABASE IF EXISTS $DbName WITH (FORCE)" | Out-Null
     Invoke-Psql 'hatlas' "CREATE DATABASE $DbName OWNER hatlas" | Out-Null
     Write-Output "database $DbName recreated (empty)"
+}
+
+# ── Full chain mode: Hatlas on the faction backend ─────────────────────────────
+function Test-HatlasMode { Test-Path (Join-Path (Get-Dir 'faction') 'hatlas.enabled') }
+
+function Write-HatlasConfig {
+    $folder = Join-Path (Get-Dir 'faction') 'plugins\hatlas'
+    New-Item -ItemType Directory -Force $folder | Out-Null
+    Copy-Item (Join-Path $PSScriptRoot 'test-stack\hatlas-config.yml') (Join-Path $folder 'config.yml') -Force
+}
+
+function Enable-Hatlas {
+    if (-not (Test-Path (Join-Path $HatlasRepo 'gradlew.bat'))) { throw "Hatlas repo not found at $HatlasRepo" }
+    if (-not (Test-Path $PacketEventsJar)) { throw "packetevents jar not found at $PacketEventsJar" }
+    Push-Location $HatlasRepo
+    try {
+        & .\gradlew.bat build --quiet
+        if ($LASTEXITCODE -ne 0) { throw 'Hatlas build failed' }
+    } finally { Pop-Location }
+    $jar = Get-ChildItem (Join-Path $HatlasRepo 'build\libs') -Filter 'hatlas-*.jar' |
+           Where-Object { $_.Name -notmatch '(sources|javadoc|plain)' } | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+    if (-not $jar) { throw 'no hatlas-*.jar in ../hatlas/build/libs' }
+    Stop-Stack 'faction'
+    $plugins = Join-Path (Get-Dir 'faction') 'plugins'
+    Get-ChildItem $plugins -Filter 'hatlas-*.jar' -ErrorAction SilentlyContinue | Remove-Item -Force
+    Copy-Item $jar.FullName (Join-Path $plugins $jar.Name) -Force
+    Copy-Item $PacketEventsJar (Join-Path $plugins (Split-Path -Leaf $PacketEventsJar)) -Force
+    Write-HatlasConfig
+    Set-Content -Path (Join-Path (Get-Dir 'faction') 'hatlas.enabled') -Value $jar.Name
+    Write-Output "Hatlas mode ON: $($jar.Name) + packetevents on faction (access.require_ticket: true)"
+    Start-Stack 'faction'
+}
+
+function Disable-Hatlas {
+    Stop-Stack 'faction'
+    $plugins = Join-Path (Get-Dir 'faction') 'plugins'
+    Get-ChildItem $plugins -Filter 'hatlas-*.jar' -ErrorAction SilentlyContinue | Remove-Item -Force
+    Get-ChildItem $plugins -Filter 'packetevents-*.jar' -ErrorAction SilentlyContinue | Remove-Item -Force
+    foreach ($d in 'hatlas', 'packetevents') {
+        $p = Join-Path $plugins $d
+        if (Test-Path $p) { Remove-Item $p -Recurse -Force }
+    }
+    Remove-Item (Join-Path (Get-Dir 'faction') 'hatlas.enabled') -Force -ErrorAction SilentlyContinue
+    Write-Output 'Hatlas mode OFF: faction is plain Paper again'
+    Start-Stack 'faction'
 }
 
 # Website ticket table with rows for the test bots (dates relative to now), for the access suites.
@@ -351,6 +404,7 @@ function Reset-Stack {
     Reset-Database
     Import-WebTickets
     Copy-Item (Join-Path $PSScriptRoot 'test-stack\hatlas-proxy-config.yml') (Join-Path (Get-Dir 'proxy') 'plugins\hatlas-proxy\config.yml') -Force
+    if (Test-HatlasMode) { Write-HatlasConfig; Write-Output 'Hatlas mode is ON: Hatlas config restored' }
     Write-Output 'worlds deleted, database emptied, plugin config restored'
     Start-Stack 'all'
 }
@@ -363,6 +417,14 @@ switch ($Action) {
     'status'  { foreach ($n in @('proxy', 'hub', 'faction')) { "{0,-8} {1}" -f $n, $(if (Get-StackProcess $n) { 'running' } else { 'stopped' }) } }
     'deploy'  { Deploy-Plugin }
     'reset'   { Reset-Stack }
+    'hatlas'  {
+        switch ($Target) {
+            'on'     { Enable-Hatlas }
+            'off'    { Disable-Hatlas }
+            'status' { if (Test-HatlasMode) { "Hatlas mode ON ($((Get-Content (Join-Path (Get-Dir 'faction') 'hatlas.enabled') -Raw).Trim()))" } else { 'Hatlas mode OFF (plain Paper)' } }
+            default  { throw 'usage: hatlas <on|off|status>' }
+        }
+    }
     'db-up'   { Start-Database }
     'console' {
         if (-not $Backends.Contains($Target) -or -not $Command) { throw 'usage: console <hub|faction> "<command>" (the proxy has no RCON)' }
