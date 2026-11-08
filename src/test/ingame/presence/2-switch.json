@@ -1,0 +1,6 @@
+[
+  {"action": "command", "bot": "Tester1", "command": "server faction"},
+  {"action": "wait_for", "condition": "ticks", "count": 60},
+  {"action": "command", "bot": "Tester1", "command": "link"},
+  {"action": "assert_message", "bot": "Tester1", "contains": "Use /link on the hub"}
+]

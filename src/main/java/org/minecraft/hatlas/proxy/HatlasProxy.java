@@ -14,11 +14,16 @@ import org.minecraft.hatlas.proxy.config.ConfigLoader;
 import org.minecraft.hatlas.proxy.config.HatlasConfig;
 import org.minecraft.hatlas.proxy.db.Database;
 import org.minecraft.hatlas.proxy.db.DatabaseException;
+import org.minecraft.hatlas.proxy.db.JdbcProbe;
+import org.minecraft.hatlas.proxy.db.WebTables;
 import org.minecraft.hatlas.proxy.link.Cooldown;
 import org.minecraft.hatlas.proxy.link.LinkCodeGenerator;
 import org.minecraft.hatlas.proxy.link.LinkCodeStore;
 import org.minecraft.hatlas.proxy.link.LinkCommand;
 import org.minecraft.hatlas.proxy.message.Messages;
+import org.minecraft.hatlas.proxy.presence.JdbcPresenceStore;
+import org.minecraft.hatlas.proxy.presence.PresenceListener;
+import org.minecraft.hatlas.proxy.presence.PresenceTracker;
 import org.slf4j.Logger;
 
 import java.nio.file.Path;
@@ -32,7 +37,7 @@ import java.util.Map;
  *   <li>{@code /link}: single-use code in {@code web.link_codes} for the SvelteKit site (done);</li>
  *   <li>ticket check when moving hub → faction server ({@code web.tickets}, tied to the UUID) (done);</li>
  *   <li>mid-session ticket expiry: warn, then send back to the hub (done);</li>
- *   <li>presence table (who is online, on which server).</li>
+ *   <li>presence table {@code web.presence} (who is online, on which server) (done).</li>
  * </ul>
  * No game data is written to the plugin by the website; writes go through PostgreSQL.
  */
@@ -50,6 +55,8 @@ public final class HatlasProxy {
     private final Path dataDirectory;
     private HatlasConfig config;
     private Database database;
+    private PresenceTracker presence;
+    private com.velocitypowered.api.scheduler.ScheduledTask tableCheck;
 
     @Inject
     public HatlasProxy(ProxyServer server, Logger logger, @DataDirectory Path dataDirectory) {
@@ -72,9 +79,10 @@ public final class HatlasProxy {
                 logger.warn("config.yml names server '{}', which is not declared in velocity.toml", name);
             }
         }
+        WebTables tables;
         try {
             database = Database.open(config.database());
-            database.applySchema();
+            tables = new WebTables(new JdbcProbe(database), config.database().schema(), Database.schemaFile(), logger);
         } catch (DatabaseException e) {
             // Every feature needs the database: stay loaded but inactive.
             logger.error("hatlas.proxy disabled: {}", e.getMessage());
@@ -90,11 +98,27 @@ public final class HatlasProxy {
         var commands = server.getCommandManager();
         commands.register(commands.metaBuilder("link").plugin(this).build(),
                 new LinkCommand(config, messages, linkCodes,
-                        new Cooldown(Duration.ofSeconds(config.link().cooldownSeconds())), logger));
+                        new Cooldown(Duration.ofSeconds(config.link().cooldownSeconds())),
+                        () -> tables.isReady(WebTables.Table.LINK_CODES), logger));
 
         TicketGate gate = new TicketGate(server, config, messages, new TicketStore(database), logger);
         server.getEventManager().register(this, gate);
         gate.schedule(this);
+
+        presence = new PresenceTracker(new JdbcPresenceStore(database), PresenceTracker.newWriter(),
+                () -> tables.isReady(WebTables.Table.PRESENCE), logger);
+        PresenceListener presenceListener = new PresenceListener(server, presence);
+        server.getEventManager().register(this, presenceListener);
+        // Empty the table (crash leftovers) and write who is online, each time it becomes usable.
+        tables.onReady(WebTables.Table.PRESENCE, () -> presence.resync(presenceListener::online));
+
+        // The website's migrations own the web tables: look for them now, then again until all
+        // are usable (never on an event thread).
+        database.executor().execute(tables::check);
+        Duration every = Duration.ofSeconds(config.database().recheckSeconds());
+        tableCheck = server.getScheduler().buildTask(this, () -> {
+            if (!tables.allReady()) database.executor().execute(tables::check);
+        }).delay(every).repeat(every).schedule();
 
         logger.info("hatlas.proxy enabled (hub '{}', faction '{}', database {}, schema {})",
                 config.servers().hub(), config.servers().faction(), config.database().jdbcUrl(),
@@ -102,6 +126,14 @@ public final class HatlasProxy {
     }
 
     private void closeDatabase() {
+        if (tableCheck != null) {
+            tableCheck.cancel();
+            tableCheck = null;
+        }
+        if (presence != null) {
+            presence.shutdown(Duration.ofSeconds(3));
+            presence = null;
+        }
         if (database != null) {
             database.close();
             database = null;

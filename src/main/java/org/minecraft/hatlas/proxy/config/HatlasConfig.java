@@ -18,7 +18,8 @@ public record HatlasConfig(
 
     /** PostgreSQL connection. The password comes from the environment variable {@code passwordEnv}. */
     public record Database(String host, int port, String name, String user, String passwordEnv,
-                           String schema, int poolSize, int connectionTimeoutSeconds) {
+                           String schema, int poolSize, int connectionTimeoutSeconds,
+                           int recheckSeconds) {
 
         public String jdbcUrl() {
             return "jdbc:postgresql://" + host + ":" + port + "/" + name;
