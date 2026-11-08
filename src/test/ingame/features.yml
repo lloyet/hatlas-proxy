@@ -40,3 +40,7 @@ features:
     - src/main/java/org/minecraft/hatlas/proxy/access/**
     - src/main/java/org/minecraft/hatlas/proxy/link/**
     - scripts/test-stack/hatlas-config.yml
+
+  # web.presence: row upserted on join and server switch, deleted on quit, emptied at proxy start.
+  presence:
+    - src/main/java/org/minecraft/hatlas/proxy/presence/**

@@ -21,11 +21,12 @@ class DatabaseTest {
 
         List<String> statements = Database.statements(sql, "web_test");
 
-        assertEquals(3, statements.size(), statements.toString());
+        assertEquals(4, statements.size(), statements.toString());
         for (String s : statements) {
             assertTrue(s.contains("IF NOT EXISTS"), "must be safe to run on every start: " + s);
             assertFalse(s.contains("{schema}") || s.contains("--"), s);
         }
         assertTrue(statements.get(1).startsWith("CREATE TABLE IF NOT EXISTS web_test.link_codes"));
+        assertTrue(statements.get(3).startsWith("CREATE TABLE IF NOT EXISTS web_test.presence"));
     }
 }

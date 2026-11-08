@@ -94,7 +94,8 @@ public final class ConfigLoader {
                 r.text("database.password-env"),
                 r.identifier("database.schema"),
                 r.integer("database.pool-size", 1, 50),
-                r.integer("database.connection-timeout-seconds", 1, 60));
+                r.integer("database.connection-timeout-seconds", 1, 60),
+                r.integer("database.recheck-seconds", 5, 3600));
 
         var servers = new HatlasConfig.Servers(r.text("servers.hub"), r.text("servers.faction"));
         if (servers.hub() != null && servers.hub().equals(servers.faction())) {

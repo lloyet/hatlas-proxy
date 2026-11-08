@@ -7,6 +7,7 @@ import org.minecraft.hatlas.proxy.message.Messages;
 import org.slf4j.Logger;
 
 import java.util.Map;
+import java.util.function.BooleanSupplier;
 
 /**
  * {@code /link}, on the hub only: gives the player a single-use code to type on the website,
@@ -19,11 +20,14 @@ public final class LinkCommand implements SimpleCommand {
     private final Messages messages;
     private final LinkCodeStore store;
     private final Cooldown cooldown;
+    private final BooleanSupplier tableReady;
     private final Logger logger;
 
+    /** @param tableReady whether {@code web.link_codes} is usable (see {@code WebTables}) */
     public LinkCommand(HatlasConfig config, Messages messages, LinkCodeStore store, Cooldown cooldown,
-                       Logger logger) {
+                       BooleanSupplier tableReady, Logger logger) {
         this.config = config;
+        this.tableReady = tableReady;
         this.messages = messages;
         this.store = store;
         this.cooldown = cooldown;
@@ -42,6 +46,11 @@ public final class LinkCommand implements SimpleCommand {
                 .orElse(false);
         if (!onHub) {
             player.sendMessage(messages.render(text.linkHubOnly()));
+            return;
+        }
+        if (!tableReady.getAsBoolean()) {
+            // web.link_codes missing or not granted yet: already logged once by WebTables.
+            player.sendMessage(messages.render(text.serviceUnavailable()));
             return;
         }
         long wait = cooldown.tryAcquire(player.getUniqueId());

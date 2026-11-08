@@ -6,8 +6,12 @@ database:
   port: 5432
   # Own database: never the Hatlas test database (hatlas_test).
   name: hatlas_proxy_dev
+  # The stack keeps a role that may create objects, so the plugin's fallback creates the web
+  # tables itself (production uses hatlas_proxy, without CREATE).
   user: hatlas
   password-env: HATLAS_DB_PASSWORD
+  # Short, so a test can watch the tables come back without a restart.
+  recheck-seconds: 5
 
 servers:
   hub: hub

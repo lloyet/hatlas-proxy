@@ -9,14 +9,20 @@ database:
   host: localhost
   port: 5432
   name: hatlas
-  user: hatlas
+  # Dedicated role, created by ../hatlas/docker/postgres/init. Its rights (granted by the
+  # website's migrations): USAGE on schema web, SELECT on web.tickets, SELECT/INSERT/UPDATE/DELETE
+  # on web.link_codes and web.presence, and no CREATE on schema web.
+  user: hatlas_proxy
   # The password is never written here: it is read from this environment variable.
-  password-env: HATLAS_DB_PASSWORD
+  password-env: HATLAS_PROXY_DB_PASSWORD
   # Schema holding link_codes, tickets and presence (owned by the website, shared with this plugin).
   schema: web
   pool-size: 5
   # How long to wait for a free connection before giving up, in seconds.
   connection-timeout-seconds: 5
+  # While web.link_codes or web.presence is missing (or not granted yet), /link and presence stay
+  # off and the tables are looked for again every this many seconds; they turn on without a restart.
+  recheck-seconds: 60
 
 servers:
   # Names of the backends, as declared in velocity.toml [servers].

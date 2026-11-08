@@ -10,7 +10,6 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -35,9 +34,10 @@ public final class Database implements AutoCloseable {
     }
 
     /**
-     * Opens the pool and checks one connection. Blocking: call it once at startup.
+     * Opens the pool. It does not wait for PostgreSQL: if the database is down at start, queries
+     * fail until it comes back (the ticket gate then fails closed, {@link WebTables} retries).
      *
-     * @throws DatabaseException when the password variable is unset or PostgreSQL cannot be reached
+     * @throws DatabaseException when the password variable is unset or the pool cannot be built
      */
     public static Database open(HatlasConfig.Database config) throws DatabaseException {
         String password = System.getenv(config.passwordEnv());
@@ -62,7 +62,7 @@ public final class Database implements AutoCloseable {
         hikari.setMaximumPoolSize(config.poolSize());
         hikari.setMinimumIdle(Math.min(1, config.poolSize()));
         hikari.setConnectionTimeout(config.connectionTimeoutSeconds() * 1000L);
-        hikari.setInitializationFailTimeout(config.connectionTimeoutSeconds() * 1000L);
+        hikari.setInitializationFailTimeout(-1); // start even if PostgreSQL is not up yet
         try {
             return new Database(new HikariDataSource(hikari), config.schema());
         } catch (RuntimeException e) {
@@ -71,25 +71,15 @@ public final class Database implements AutoCloseable {
         }
     }
 
-    /** Creates the web tables this plugin writes, if missing (Open Question 8). Blocking. */
-    public void applySchema() throws DatabaseException {
-        String sql;
+    /** The fallback schema file ({@value #SCHEMA_FILE}) from the jar. */
+    public static String schemaFile() throws DatabaseException {
         try (InputStream in = Database.class.getClassLoader().getResourceAsStream(SCHEMA_FILE)) {
             if (in == null) {
                 throw new DatabaseException(SCHEMA_FILE + " missing from the plugin jar", null);
             }
-            sql = new String(in.readAllBytes(), StandardCharsets.UTF_8);
+            return new String(in.readAllBytes(), StandardCharsets.UTF_8);
         } catch (IOException e) {
             throw new DatabaseException("cannot read " + SCHEMA_FILE + ": " + e.getMessage(), e);
-        }
-        try (Connection c = dataSource.getConnection(); Statement st = c.createStatement()) {
-            c.setAutoCommit(false);
-            for (String statement : statements(sql, schema)) {
-                st.execute(statement);
-            }
-            c.commit();
-        } catch (SQLException e) {
-            throw new DatabaseException("cannot create the " + schema + " tables: " + e.getMessage(), e);
         }
     }
 
@@ -107,12 +97,24 @@ public final class Database implements AutoCloseable {
     /** Runs blocking JDBC work off the proxy's threads. */
     public <T> CompletableFuture<T> supply(SqlWork<T> work) {
         return CompletableFuture.supplyAsync(() -> {
-            try (Connection c = dataSource.getConnection()) {
-                return work.run(c);
+            try {
+                return call(work);
             } catch (SQLException e) {
                 throw new java.util.concurrent.CompletionException(e);
             }
         }, executor);
+    }
+
+    /** Runs JDBC work on the CURRENT thread (only from an executor or at shutdown, never an event thread). */
+    public <T> T call(SqlWork<T> work) throws SQLException {
+        try (Connection c = dataSource.getConnection()) {
+            return work.run(c);
+        }
+    }
+
+    /** The executor of {@link #supply}, for other blocking work (virtual threads). */
+    public java.util.concurrent.Executor executor() {
+        return executor;
     }
 
     /** The schema holding the web tables ({@code database.schema}), a checked plain identifier. */

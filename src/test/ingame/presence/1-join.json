@@ -1,0 +1,6 @@
+[
+  {"action": "spawn", "bot": "Tester1"},
+  {"action": "wait_for", "condition": "ticks", "count": 40},
+  {"action": "console", "command": "tellraw Tester1 \"presence:on-hub\""},
+  {"action": "assert_message", "bot": "Tester1", "contains": "presence:on-hub"}
+]

@@ -22,7 +22,9 @@ class ConfigLoaderTest {
 
         assertTrue(Files.exists(dir.resolve("config.yml")));
         assertEquals("jdbc:postgresql://localhost:5432/hatlas", config.database().jdbcUrl());
-        assertEquals("HATLAS_DB_PASSWORD", config.database().passwordEnv());
+        assertEquals("hatlas_proxy", config.database().user());
+        assertEquals("HATLAS_PROXY_DB_PASSWORD", config.database().passwordEnv());
+        assertEquals(60, config.database().recheckSeconds());
         assertEquals("hub", config.servers().hub());
         assertEquals("faction", config.servers().faction());
         assertEquals(List.of(10, 1), config.access().warnBeforeMinutes());

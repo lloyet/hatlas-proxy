@@ -1,0 +1,4 @@
+[
+  {"action": "despawn", "bot": "Tester1"},
+  {"action": "wait_for", "condition": "ticks", "count": 20}
+]
